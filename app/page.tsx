@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useSession, signIn, signOut } from "next-auth/react";
+import Link from "next/link";
 
 // Animation variants
 const container = {
@@ -103,7 +105,7 @@ export default function Home() {
             </div>
 
             {/* Links de Navegação - Direita */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-4">
               <a
                 href="#salas-online"
                 className="text-white hover:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:bg-gradient-to-r hover:from-purple-600/20 hover:to-blue-600/20 hover:scale-105"
@@ -122,6 +124,50 @@ export default function Home() {
               >
                 Comunidade
               </a>
+
+              {/* Auth UI */}
+              {(() => {
+                const { data: session, status } = useSession();
+
+                if (status === "loading") {
+                  return (
+                    <div className="text-gray-400 animate-pulse">
+                      Carregando...
+                    </div>
+                  );
+                }
+
+                if (status === "authenticated" && session?.user) {
+                  return (
+                    <div className="flex items-center gap-4">
+                      <span className="text-purple-400">
+                        Olá, {session.user.name}!
+                      </span>
+                      <Link 
+                        href="/dashboard"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105"
+                      >
+                        Meu Painel
+                      </Link>
+                      <button
+                        onClick={() => signOut()}
+                        className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    onClick={() => signIn()}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-purple-500/50"
+                  >
+                    Login
+                  </button>
+                );
+              })()}
             </div>
 
             {/* Menu Mobile (Placeholder) */}
