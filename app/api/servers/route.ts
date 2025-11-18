@@ -77,12 +77,17 @@ export async function POST(request: NextRequest) {
 
     console.log(`[API] Servidor será criado no host: ${availableHost.name}`);
 
+    // Gerar ID e pm2ProcessName
+    const serverId = crypto.randomUUID();
+    const pm2ProcessName = `haxball-server-${serverId.substring(0, 8)}`;
+
     const server = await prisma.server.create({
       data: {
-        id: crypto.randomUUID(),
+        id: serverId,
         userId: session.user.id,
         name: name.trim(),
         hostName: availableHost.name, // NOVO: Atribui host automaticamente
+        pm2ProcessName: pm2ProcessName, // CORREÇÃO: Gerar pm2ProcessName
         maxPlayers: maxPlayers || 20,
         password: password || null,
         isPublic: isPublic !== false,

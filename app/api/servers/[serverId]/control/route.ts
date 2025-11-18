@@ -51,7 +51,7 @@ export async function POST(
 
     // 4. Valida a ação
     const body = await request.json();
-    const { action } = body;
+    const { action, dryRun } = body;
 
     if (!action || !["start", "stop", "restart"].includes(action)) {
       return NextResponse.json(
@@ -62,6 +62,9 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Modo DRY_RUN: apenas retorna o comando sem executar
+    const isDryRun = dryRun === true || process.env.NODE_ENV === "test";
 
     // 5. Buscar host do servidor
     if (!server.hostName) {
@@ -90,7 +93,35 @@ export async function POST(
       );
     }
 
-    // 7. Conectar via SSH
+    // 7. Modo DRY_RUN: Retorna comando sem executar
+    if (isDryRun) {
+      let dryRunCommand: string;
+      
+      switch (action) {
+        case "start":
+          dryRunCommand = `ssh -i ~/.ssh/key.pem ${host.ssh_user}@${host.ip} "cd ${host.base_path} && pm2 start index.js --name ${pm2ProcessName}"`;
+          break;
+        case "stop":
+          dryRunCommand = `ssh -i ~/.ssh/key.pem ${host.ssh_user}@${host.ip} "pm2 stop ${pm2ProcessName}"`;
+          break;
+        case "restart":
+          dryRunCommand = `ssh -i ~/.ssh/key.pem ${host.ssh_user}@${host.ip} "pm2 restart ${pm2ProcessName} --update-env"`;
+          break;
+        default:
+          dryRunCommand = "Ação inválida";
+      }
+
+      return NextResponse.json({
+        success: true,
+        dryRun: true,
+        message: `[DRY RUN] Comando que seria executado:`,
+        command: dryRunCommand,
+        host: host.name,
+        pm2ProcessName,
+      });
+    }
+
+    // 8. Conectar via SSH (modo real)
     console.log(`[CONTROL] Conectando em ${host.name} (${host.ip})`);
     const sshClient = await createSSHClient(undefined, host.name);
 
