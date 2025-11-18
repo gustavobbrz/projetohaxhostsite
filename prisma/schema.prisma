@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model AdminLog {
+  id           String   @id
+  serverId     String
+  adminName    String
+  adminAuth    String?
+  action       String
+  targetPlayer String?
+  reason       String?
+  createdAt    DateTime @default(now())
+  Server       Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model Ban {
+  id         String    @id
+  serverId   String
+  playerName String
+  playerAuth String?
+  playerIp   String?
+  reason     String?
+  bannedBy   String
+  isActive   Boolean   @default(true)
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  Server     Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id         String   @id
+  serverId   String
+  playerName String
+  playerAuth String?
+  message    String
+  source     String   @default("game")
+  createdAt  DateTime @default(now())
+  Server     Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model DiscordChannel {
+  id          String   @id
+  serverId    String
+  channelType String
+  channelId   String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  Server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@unique([serverId, channelType])
+}
+
+model PlayerEntry {
+  id         String   @id
+  serverId   String
+  playerName String
+  playerAuth String?
+  playerConn String?
+  playerIp   String?
+  action     String   @default("joined")
+  createdAt  DateTime @default(now())
+  Server     Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model Replay {
+  id         String   @id
+  serverId   String
+  fileName   String
+  fileUrl    String?
+  scoreRed   Int
+  scoreBlue  Int
+  duration   Int
+  players    String
+  possession String?
+  createdAt  DateTime @default(now())
+  Server     Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id           String   @id
+  serverId     String
+  reporterName String
+  reporterAuth String?
+  reportedName String
+  reportedAuth String?
+  reason       String
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Server       Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+}
+
+model Server {
+  id                 String           @id
+  userId             String
+  name               String
+  status             String           @default("pending")
+  pm2ProcessName     String?          @unique
+  hostName           String?          // Nome do host (azzura, sv1, sv2)
+  discordServerId    String?
+  ec2InstanceId      String?
+  roomLink           String?
+  maxPlayers         Int              @default(20)
+  password           String?
+  isPublic           Boolean          @default(true)
+  map                String           @default("Big")
+  token              String?
+  tokenEncrypted     String?
+  playerCount        Int              @default(0)
+  lastStatusUpdate   DateTime?
+  needsProvision     Boolean          @default(true)
+  discordBotToken    String?
+  subscriptionStatus String           @default("inactive")
+  subscriptionId     String?
+  planType           String           @default("premium")
+  nextBillingDate    DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime
+  AdminLog           AdminLog[]
+  Ban                Ban[]
+  ChatMessage        ChatMessage[]
+  DiscordChannel     DiscordChannel[]
+  PlayerEntry        PlayerEntry[]
+  Replay             Replay[]
+  Report             Report[]
+  ServerAdmin        ServerAdmin[]
+  User               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ServerAdmin {
+  id         String   @id @default(cuid())
+  serverId   String
+  label      String?
+  adminHash  String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  Server     Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([serverId])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  Account       Account[]
+  Server        Server[]
+  Session       Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
