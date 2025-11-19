@@ -84,7 +84,11 @@ export async function POST(
     const newToken = body.token;
 
     // Provisionar (essa função está em lib/provisioning/server-provisioner.ts)
-    const result = await provisionServer(serverId, newToken);
+    const result = await provisionServer({
+      serverId: serverId,
+      token: newToken,
+      forceRestart: false,
+    });
 
     if (!result.success) {
       return NextResponse.json(
