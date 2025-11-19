@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
-import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -121,7 +120,6 @@ export async function POST(
     // Criar admin
     const admin = await prisma.serverAdmin.create({
       data: {
-        id: crypto.randomUUID(),
         serverId,
         label: label || "Admin",
         adminHash: adminHash.trim(),

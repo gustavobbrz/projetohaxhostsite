@@ -105,7 +105,7 @@ export async function POST(
       where: { id: serverId },
       data: {
         status: "running",
-        lastProvisionedAt: new Date(),
+        needsProvision: false,
         updatedAt: new Date(),
       },
     });
