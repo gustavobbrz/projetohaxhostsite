@@ -101,9 +101,30 @@ export default function RoomLinkCard({ roomLink, serverName }: RoomLinkCardProps
             Compartilhe este link para os jogadores entrarem 🎮
           </p>
         ) : (
-          <p className="text-sm text-yellow-400/80">
-            ⏳ O link aparecerá aqui quando a sala for iniciada
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-yellow-400/80">
+              ⏳ O link aparecerá aqui quando a sala for iniciada
+            </p>
+            
+            {/* Alerta de Token */}
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-left">
+              <p className="text-xs text-red-400 font-semibold mb-2">
+                ⚠️ Sala não iniciou? Pode ser o token!
+              </p>
+              <p className="text-xs text-gray-400 mb-3">
+                Se você já provisionou mas o link não aparece, o token pode estar inválido/expirado.
+              </p>
+              <a
+                href="https://www.haxball.com/headlesstoken"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-all hover:scale-105"
+              >
+                <span>🔗</span>
+                <span>Pegar Token Válido</span>
+              </a>
+            </div>
+          </div>
         )}
       </div>
     </motion.div>

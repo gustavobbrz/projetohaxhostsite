@@ -442,9 +442,20 @@ export default function ServerConfigForm({ server, onServerCreated, onServerUpda
         {/* Token (Opcional - só em edição) */}
         {isEditMode && (
           <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-            <label className="block text-yellow-400 text-sm font-medium mb-2">
-              🔑 Token Haxball <span className="text-gray-400">(opcional - deixe vazio para manter atual)</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-yellow-400 text-sm font-medium">
+                🔑 Token Haxball <span className="text-gray-400">(opcional - deixe vazio para manter atual)</span>
+              </label>
+              <a
+                href="https://www.haxball.com/headlesstoken"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg transition-all hover:scale-105"
+              >
+                <span>🔗</span>
+                <span>Pegar Token</span>
+              </a>
+            </div>
             <div className="relative">
               <input
                 type={showToken ? "text" : "password"}
@@ -462,9 +473,14 @@ export default function ServerConfigForm({ server, onServerCreated, onServerUpda
                 {showToken ? "👁️" : "👁️‍🗨️"}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              ⚠️ Alterar o token requer reiniciar o servidor
-            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-xs text-gray-400">
+                ⚠️ Alterar o token requer reiniciar o servidor
+              </p>
+              <p className="text-xs text-blue-400">
+                💡 Clique em "Pegar Token" para abrir o site oficial do Haxball e obter um token válido
+              </p>
+            </div>
           </div>
         )}
       </div>
