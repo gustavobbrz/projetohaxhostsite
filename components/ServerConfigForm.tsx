@@ -144,6 +144,17 @@ export default function ServerConfigForm({ server, onServerCreated, onServerUpda
       return;
     }
 
+    // Verificar se tem token (no formulário ou já salvo no servidor)
+    const hasToken = formData.token || server?.token || server?.tokenEncrypted;
+    
+    if (!hasToken) {
+      setMessage({ 
+        type: "error", 
+        text: "❌ Token obrigatório! Clique em 'Pegar Token' e cole aqui antes de provisionar." 
+      });
+      return;
+    }
+
     if (!confirm("🚀 Provisionar servidor? Isso criará e iniciará o processo PM2 na EC2.")) {
       return;
     }
@@ -153,8 +164,12 @@ export default function ServerConfigForm({ server, onServerCreated, onServerUpda
 
     try {
       const body: any = {};
+      // Se tem token novo no formulário, enviar
       if (formData.token) {
         body.token = formData.token;
+        console.log('[PROVISION] Enviando token novo do formulário');
+      } else {
+        console.log('[PROVISION] Usando token já salvo no banco de dados');
       }
 
       const response = await fetch(`/api/servers/${server.id}/provision`, {

@@ -83,6 +83,19 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
     const newToken = body.token;
 
+    // Se não tem token no body, verificar se tem no DB
+    if (!newToken && !server.token && !server.tokenEncrypted) {
+      return NextResponse.json(
+        { 
+          error: "❌ Token Haxball não configurado",
+          details: "Você precisa fornecer um token válido do Haxball. Clique em 'Pegar Token' para obter um.",
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log(`[PROVISION] Token: ${newToken ? 'Novo fornecido' : 'Usando do banco de dados'}`);
+
     // Provisionar (essa função está em lib/provisioning/server-provisioner.ts)
     const result = await provisionServer({
       serverId: serverId,
