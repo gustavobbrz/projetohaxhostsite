@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
+import { getAvailableHost } from "@/lib/hosts";
 import crypto from "crypto";
 
 const prisma = new PrismaClient();
@@ -94,7 +95,7 @@ export async function PUT(
     // Verificar se servidor existe e pertence ao usuário
     const server = await prisma.server.findUnique({
       where: { id: serverId },
-      select: { userId: true },
+      select: { userId: true, hostName: true, pm2ProcessName: true },
     });
 
     if (!server) {
@@ -111,6 +112,29 @@ export async function PUT(
       );
     }
 
+    // Se não tem host atribuído, atribuir agora
+    let hostName = server.hostName;
+    let pm2ProcessName = server.pm2ProcessName;
+
+    if (!hostName) {
+      const availableHost = await getAvailableHost();
+      if (!availableHost) {
+        return NextResponse.json(
+          { error: "Nenhuma EC2 disponível. Todas estão no limite de capacidade." },
+          { status: 503 }
+        );
+      }
+      hostName = availableHost.name;
+      console.log(`[SERVER PUT] Atribuindo host: ${hostName} ao servidor ${serverId}`);
+    }
+
+    // Se não tem pm2ProcessName, gerar agora
+    if (!pm2ProcessName) {
+      const shortId = serverId.substring(0, 8);
+      pm2ProcessName = `haxball-server-${shortId}`;
+      console.log(`[SERVER PUT] Gerando pm2ProcessName: ${pm2ProcessName}`);
+    }
+
     // Atualizar servidor
     const updatedServer = await prisma.server.update({
       where: { id: serverId },
@@ -121,6 +145,8 @@ export async function PUT(
         password: password || undefined,
         isPublic: isPublic !== undefined ? isPublic : undefined,
         discordBotToken: discordBotToken || undefined,
+        hostName: hostName,
+        pm2ProcessName: pm2ProcessName,
         updatedAt: new Date(),
       },
     });
