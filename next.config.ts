@@ -23,9 +23,7 @@ const nextConfig: NextConfig = {
   },
   
   // Outras configurações
-  experimental: {
-    serverComponentsExternalPackages: ['ssh2', 'node-ssh'],
-  },
+  serverExternalPackages: ['ssh2', 'node-ssh'],
 };
 
 export default nextConfig;
