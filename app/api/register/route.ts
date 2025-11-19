@@ -1,47 +1,67 @@
-import { sql } from "@vercel/postgres";
-import { NextResponse } from "next/server";
-import { hash } from "bcryptjs";
+import { NextResponse } from "next/server"
+import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcryptjs"
+import crypto from "crypto"
+
+const prisma = new PrismaClient()
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password } = await req.json()
 
-    // Validação básica
-    if (!name || !email || !password) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Nome, email e senha são obrigatórios." },
+        { error: "Email e senha são obrigatórios" },
         { status: 400 }
-      );
+      )
     }
 
-    // Criptografa a senha
-    const hashedPassword = await hash(password, 10);
-
-    // Insere o usuário no banco
-    // CORREÇÃO AQUI: A tabela é "users" (plural)
-    await sql`
-            INSERT INTO "users" (name, email, password)
-            VALUES (${name}, ${email}, ${hashedPassword})
-        `;
-
-    return NextResponse.json(
-      { message: "Usuário criado com sucesso!" },
-      { status: 201 }
-    );
-  } catch (error) {
-    // Verifica se é um erro de email duplicado
-    if (error instanceof Error && error.message.includes("unique constraint")) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { error: "Email já cadastrado." },
-        { status: 409 }
-      );
+        { error: "A senha deve ter no mínimo 6 caracteres" },
+        { status: 400 }
+      )
     }
 
-    // Para outros tipos de erro
-    console.error("ERRO NO REGISTRO:", error); // Adicionado log de erro
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Este email já está cadastrado" },
+        { status: 400 }
+      )
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const user = await prisma.user.create({
+      data: {
+        id: crypto.randomUUID(),
+        name,
+        email,
+        password: hashedPassword,
+        updatedAt: new Date(),
+      },
+    })
+
     return NextResponse.json(
-      { error: "Erro ao criar usuário." },
+      {
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error("Erro ao registrar usuário:", error)
+    return NextResponse.json(
+      { error: "Erro ao criar conta" },
       { status: 500 }
-    );
+    )
   }
 }

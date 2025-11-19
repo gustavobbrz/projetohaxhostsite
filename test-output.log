@@ -1,0 +1,80 @@
+🧪 ============================================
+🧪 TESTES DE ROTAS MULTI-HOST (MODO SIMULADO)
+🧪 ============================================
+
+📋 Teste 1: Carregar config/hosts.json
+[HOSTS] Carregadas 3 EC2(s)
+
+🔄 Teste 2: Load Balancing (getAvailableHost)
+[HOSTS] Distribuição atual: { azzura: 1, sv1: 0, sv2: 0 }
+[HOSTS] Host selecionado: sv1 (0/2 salas)
+
+🆕 Teste 3: Lógica de Criação de Servidor (simulado)
+[HOSTS] Distribuição atual: { azzura: 1, sv1: 0, sv2: 0 }
+[HOSTS] Host selecionado: sv1 (0/2 salas)
+
+🎮 Teste 4: Control Dry-Run (restart)
+
+👤 Teste 5: Endpoint de Admins (lógica)
+
+📊 ============================================
+📊 RESUMO DOS TESTES
+📊 ============================================
+
+1. ✅ PASS Load hosts.json
+   3 hosts carregados: azzura, sv1, sv2
+   Dados:    {
+     "hosts": [
+       {
+         "name": "azzura",
+         "ip": "18.231.184.163"
+       },
+       {
+         "name": "sv1",
+         "ip": "18.230.17.55"
+       },
+       {
+         "name": "sv2",
+         "ip": "18.230.122.222"
+       }
+     ]
+   }
+
+2. ✅ PASS Load Balancing
+   Host selecionado: sv1 (menos carga)
+   Dados:    {
+     "selectedHost": "sv1",
+     "distribution": {
+       "azzura": 1,
+       "sv1": 0,
+       "sv2": 0
+     }
+   }
+
+3. ✅ PASS Criar Servidor
+   Servidor mockado criado com sucesso
+   Dados:    {
+     "server": {
+       "id": "a64fd861-f622-41d4-a45c-fb9572a07ea9",
+       "hostName": "sv1",
+       "pm2ProcessName": "haxball-server-a64fd861"
+     },
+     "validations": {
+       "hasId": true,
+       "hasHostName": true,
+       "hasPm2ProcessName": true,
+       "pm2ProcessNameFormat": true
+     }
+   }
+
+4. ✅ PASS Control Dry-Run
+   Dry-run gerado corretamente
+   Dados:    {
+     "success": true,
+     "dryRun": true,
+     "message": "[DRY RUN] Comando que seria executado:",
+     "command": "ssh -i ~/.ssh/key.pem ubuntu@18.231.184.163 \"pm2 restart haxball-server-test123 --update-env\"",
+     "host": "azzura",
+     "pm2ProcessName": "haxball-server-test123"
+   }
+

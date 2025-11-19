@@ -78,6 +78,7 @@ Transformar o sistema de single-host (1 EC2) em **multi-host (3 EC2s)**, com:
 ```
 
 **Importante:**
+
 - As chaves SSH (`~/.ssh/billyhax.pem` e `~/.ssh/haxhost.pem`) **devem existir** na máquina que roda o Next.js
 - Permissões das chaves: `chmod 400 ~/.ssh/*.pem`
 - O caminho `~` é expandido automaticamente para `/home/usuario` pelo helper `expandKeyPath()`
@@ -92,6 +93,7 @@ model Server {
 ```
 
 **Sincronização:**
+
 ```bash
 npx prisma generate
 npx prisma db push
@@ -114,13 +116,14 @@ await prisma.server.create({
   data: {
     hostName: availableHost.name, // "azzura", "sv1" ou "sv2"
     // ... outros campos
-  }
+  },
 });
 
 // Retorna: { server, host: { name: "azzura", ip: "18.231.184.163" } }
 ```
 
 **Estratégia de Load Balancing:**
+
 - Conta quantos servidores `active` ou `pending` cada host tem
 - Retorna o host com **menor contagem**
 - Se todos atingirem `max_rooms_per_host` (2), retorna `503 Service Unavailable`
@@ -164,12 +167,15 @@ sshClient.disconnect();
 ## 📊 HELPERS (`lib/hosts.ts`)
 
 ### `getAllHosts(): HostConfig[]`
+
 Retorna todos os hosts configurados em `config/hosts.json`.
 
 ### `getHostByName(name: string): HostConfig | null`
+
 Busca um host específico pelo nome (ex: `"azzura"`).
 
 ### `getAvailableHost(): Promise<HostConfig | null>`
+
 **Load balancing:** Retorna o host com **menos servidores ativos**.
 
 - Conta servidores com `status = "active" | "pending"`
@@ -177,9 +183,11 @@ Busca um host específico pelo nome (ex: `"azzura"`).
 - Se todos atingirem `max_rooms_per_host`, retorna `null`
 
 ### `getHostForServer(serverId: string): Promise<HostConfig | null>`
+
 Busca no banco o `hostName` do servidor e retorna o `HostConfig` correspondente.
 
 ### `readSSHKey(host: HostConfig): string`
+
 Lê o conteúdo da chave privada SSH do host.
 
 - Expande `~` para home dir
@@ -187,9 +195,11 @@ Lê o conteúdo da chave privada SSH do host.
 - Retorna conteúdo da chave
 
 ### `validateHosts(): { valid: boolean; errors: string[] }`
+
 Valida se **todas as chaves SSH existem e são legíveis**.
 
 **Uso:**
+
 ```typescript
 const validation = validateHosts();
 if (!validation.valid) {
@@ -198,6 +208,7 @@ if (!validation.valid) {
 ```
 
 ### `getHostsStats(): Promise<Array<...>>`
+
 Retorna estatísticas de uso de todos os hosts:
 
 ```typescript
@@ -207,10 +218,10 @@ Retorna estatísticas de uso de todos os hosts:
     ip: "18.231.184.163",
     activeServers: 1,
     maxServers: 2,
-    usage: 50
+    usage: 50,
   },
   // ... sv1, sv2
-]
+];
 ```
 
 ---
@@ -218,11 +229,13 @@ Retorna estatísticas de uso de todos os hosts:
 ## 🧪 TESTES LOCAIS
 
 ### 1. Validar Hosts
+
 ```bash
 node -e "const { validateHosts } = require('./lib/hosts.ts'); console.log(validateHosts());"
 ```
 
 ### 2. Criar Servidor
+
 ```bash
 curl -X POST http://localhost:3000/api/servers \
   -H "Content-Type: application/json" \
@@ -231,6 +244,7 @@ curl -X POST http://localhost:3000/api/servers \
 ```
 
 **Resposta esperada:**
+
 ```json
 {
   "success": true,
@@ -247,6 +261,7 @@ curl -X POST http://localhost:3000/api/servers \
 ```
 
 ### 3. Controlar Servidor
+
 ```bash
 curl -X POST http://localhost:3000/api/servers/{serverId}/control \
   -H "Content-Type: application/json" \
@@ -255,6 +270,7 @@ curl -X POST http://localhost:3000/api/servers/{serverId}/control \
 ```
 
 **Resposta esperada:**
+
 ```json
 {
   "success": true,
@@ -270,16 +286,19 @@ curl -X POST http://localhost:3000/api/servers/{serverId}/control \
 ## 🔒 SEGURANÇA
 
 ### Chaves SSH
+
 - **Nunca commitar** as chaves no Git
 - Permissões corretas: `chmod 400 ~/.ssh/*.pem`
 - As chaves ficam **fora do projeto** (em `~/.ssh/`)
 
 ### Config Hosts
+
 - `config/hosts.json` contém apenas **metadados**
 - Não contém senhas ou chaves privadas
 - IPs públicos são OK (já estão expostos na AWS)
 
 ### Validação
+
 - `getAvailableHost()` respeita `max_rooms_per_host`
 - `getHostForServer()` valida existência do host
 - Todos os endpoints validam `session.user.id`
@@ -291,6 +310,7 @@ curl -X POST http://localhost:3000/api/servers/{serverId}/control \
 ### Adicionar Novo Host
 
 1. **Adicionar em `config/hosts.json`:**
+
 ```json
 {
   "name": "sv3",
@@ -303,11 +323,13 @@ curl -X POST http://localhost:3000/api/servers/{serverId}/control \
 ```
 
 2. **Reiniciar Next.js:**
+
 ```bash
 npm run dev
 ```
 
 3. **Validar:**
+
 ```bash
 node -e "const { getAllHosts } = require('./lib/hosts'); console.log(getAllHosts().length);"
 # Deve retornar 4
@@ -316,22 +338,25 @@ node -e "const { getAllHosts } = require('./lib/hosts'); console.log(getAllHosts
 ### Aumentar Limite por Host
 
 Editar `config/hosts.json`:
+
 ```json
 {
-  "max_rooms_per_host": 5  // Era 2, agora 5
+  "max_rooms_per_host": 5 // Era 2, agora 5
 }
 ```
 
 ### Migrar Servidor entre Hosts
 
 **Manualmente (banco):**
+
 ```sql
-UPDATE "Server" 
+UPDATE "Server"
 SET "hostName" = 'sv2'
 WHERE id = 'server-id-aqui';
 ```
 
 **Depois:**
+
 - Parar processo PM2 no host antigo
 - Provisionar novamente (`POST /api/servers/:id/provision`)
 
@@ -344,6 +369,7 @@ WHERE id = 'server-id-aqui';
 **Causa:** `config/hosts.json` não existe ou host não está configurado.
 
 **Solução:**
+
 1. Verificar se arquivo existe: `ls -la config/hosts.json`
 2. Validar JSON: `cat config/hosts.json | jq .`
 3. Verificar nome do host no banco: `SELECT "hostName" FROM "Server";`
@@ -353,9 +379,11 @@ WHERE id = 'server-id-aqui';
 **Causa:** Caminho da chave inválido ou arquivo não existe.
 
 **Solução:**
+
 1. Verificar chaves: `ls -la ~/.ssh/*.pem`
 2. Verificar permissões: `chmod 400 ~/.ssh/*.pem`
 3. Testar conexão manual:
+
 ```bash
 ssh -i ~/.ssh/billyhax.pem ubuntu@18.231.184.163
 ```
@@ -365,6 +393,7 @@ ssh -i ~/.ssh/billyhax.pem ubuntu@18.231.184.163
 **Causa:** Todos os hosts atingiram `max_rooms_per_host`.
 
 **Solução:**
+
 1. Aumentar `max_rooms_per_host` em `hosts.json`
 2. Adicionar novo host
 3. Deletar servidores inativos
@@ -374,8 +403,9 @@ ssh -i ~/.ssh/billyhax.pem ubuntu@18.231.184.163
 **Causa:** Servidor criado antes da implementação multi-host.
 
 **Solução:**
+
 ```sql
-UPDATE "Server" 
+UPDATE "Server"
 SET "hostName" = 'azzura'
 WHERE "hostName" IS NULL;
 ```
@@ -385,6 +415,7 @@ WHERE "hostName" IS NULL;
 ## 📝 CHANGELOG
 
 ### v1.0.0 - 18/11/2025
+
 - ✅ Implementação inicial multi-host
 - ✅ Load balancing automático
 - ✅ SSH dinâmico por host
@@ -408,4 +439,3 @@ WHERE "hostName" IS NULL;
 **Desenvolvido por:** Cursor AI + Claude Sonnet 4.5  
 **Data:** 18 de Novembro de 2025  
 **Versão:** 1.0.0
-
