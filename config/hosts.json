@@ -1,24 +1,16 @@
 {
   "hosts": [
     {
-      "name": "azzura",
-      "ip": "18.231.184.163",
-      "ssh_user": "ubuntu",
-      "ssh_private_key_path": "~/.ssh/billyhax.pem",
-      "base_path": "/home/ubuntu/meu-servidor-haxball",
-      "ssh_port": 22
-    },
-    {
-      "name": "sv1",
-      "ip": "18.230.17.55",
+      "name": "ec2-test-1",
+      "ip": "54.233.34.155",
       "ssh_user": "ubuntu",
       "ssh_private_key_path": "~/.ssh/haxhost.pem",
       "base_path": "/home/ubuntu/meu-servidor-haxball",
       "ssh_port": 22
     },
     {
-      "name": "sv2",
-      "ip": "18.230.122.222",
+      "name": "ec2-test-2",
+      "ip": "56.125.172.250",
       "ssh_user": "ubuntu",
       "ssh_private_key_path": "~/.ssh/haxhost.pem",
       "base_path": "/home/ubuntu/meu-servidor-haxball",
@@ -28,4 +20,3 @@
   "pm2_process_template_name": "haxball-server",
   "max_rooms_per_host": 2
 }
-
