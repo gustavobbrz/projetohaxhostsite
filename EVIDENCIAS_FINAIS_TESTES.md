@@ -10,6 +10,7 @@
 ## 1️⃣ COMMITS E ARQUIVOS MODIFICADOS
 
 ### Últimos 5 Commits:
+
 ```
 c5734fc fix: stabilizar rotas multi-host e adicionar testes
 29cc0c9 feat: implement multi-host EC2 system with automatic load balancing
@@ -19,6 +20,7 @@ cc939b8 chore: add .env.local to .gitignore and setup Neon DB connection
 ```
 
 ### Arquivos Modificados (HEAD~2..HEAD):
+
 ```
 MULTI_HOST_SETUP.md
 app/api/servers/[serverId]/admin-logs/route.ts
@@ -48,6 +50,7 @@ test-multi-host-routes.ts                            ← CRIADO
 ## 2️⃣ CONTEÚDO DOS 5 ARQUIVOS PRINCIPAIS
 
 ### ✅ config/hosts.json (32 linhas)
+
 ```json
 {
   "hosts": [
@@ -82,7 +85,9 @@ test-multi-host-routes.ts                            ← CRIADO
 ```
 
 ### ✅ lib/hosts.ts (260 linhas)
+
 **Funções principais:**
+
 - `loadHostsConfig()` - Carrega config/hosts.json
 - `getAllHosts()` - Retorna array de 3 hosts
 - `getAvailableHost()` - **Load balancing** (escolhe host com menos carga)
@@ -91,7 +96,9 @@ test-multi-host-routes.ts                            ← CRIADO
 - `validateHosts()` - Valida se chaves existem
 
 ### ✅ app/api/servers/route.ts (118 linhas)
+
 **Mudança crítica (linhas 80-90):**
+
 ```typescript
 // Gerar ID e pm2ProcessName
 const serverId = crypto.randomUUID();
@@ -102,26 +109,31 @@ const server = await prisma.server.create({
     id: serverId,
     userId: session.user.id,
     name: name.trim(),
-    hostName: availableHost.name,        // ← NOVO: Load balancing
-    pm2ProcessName: pm2ProcessName,       // ← CORREÇÃO: Gerado automaticamente
+    hostName: availableHost.name, // ← NOVO: Load balancing
+    pm2ProcessName: pm2ProcessName, // ← CORREÇÃO: Gerado automaticamente
     // ...
   },
 });
 ```
 
 ### ✅ app/api/servers/[serverId]/admins/route.ts (145 linhas)
+
 **Endpoints:**
+
 - **GET** - Lista admins do servidor (com validação de ownership)
 - **POST** - Adiciona admin com `adminHash` (não retorna senha em plain text)
 
 **Validações:**
+
 - ✅ Autentic ação via `session.user.id`
 - ✅ Ownership (`server.userId === session.user.id`)
 - ✅ Retorna `401` se não autenticado
 - ✅ Retorna `403` se não for dono
 
 ### ✅ app/api/servers/[serverId]/control/route.ts (236 linhas)
+
 **Mudança crítica (linhas 54-122):**
+
 ```typescript
 const { action, dryRun } = body;
 const isDryRun = dryRun === true || process.env.NODE_ENV === "test";
@@ -129,7 +141,7 @@ const isDryRun = dryRun === true || process.env.NODE_ENV === "test";
 // Modo DRY_RUN: Retorna comando sem executar
 if (isDryRun) {
   let dryRunCommand: string;
-  
+
   switch (action) {
     case "restart":
       dryRunCommand = `ssh -i ~/.ssh/key.pem ${host.ssh_user}@${host.ip} "pm2 restart ${pm2ProcessName} --update-env"`;
@@ -157,6 +169,7 @@ if (isDryRun) {
 ### 🧪 Suite de Testes: test-multi-host-routes.ts
 
 **Execução:**
+
 ```bash
 cd /home/loy-operacao/WebstormProjects/projetohaxhostsite
 export $(grep -v '^#' .env.local | xargs)
@@ -168,6 +181,7 @@ npx tsx test-multi-host-routes.ts
 **Status:** ✅ PASS
 
 **Curl Equivalente:**
+
 ```bash
 # Teste de lógica (não é API HTTP)
 node -e "const { getAllHosts } = require('./lib/hosts'); console.log(getAllHosts());"
@@ -176,22 +190,25 @@ node -e "const { getAllHosts } = require('./lib/hosts'); console.log(getAllHosts
 **Request Body:** N/A (não é HTTP request)
 
 **Response:**
+
 ```json
 {
   "hosts": [
-    {"name": "azzura", "ip": "18.231.184.163"},
-    {"name": "sv1", "ip": "18.230.17.55"},
-    {"name": "sv2", "ip": "18.230.122.222"}
+    { "name": "azzura", "ip": "18.231.184.163" },
+    { "name": "sv1", "ip": "18.230.17.55" },
+    { "name": "sv2", "ip": "18.230.122.222" }
   ]
 }
 ```
 
 **Backend Logs:**
+
 ```
 [HOSTS] Carregadas 3 EC2(s)
 ```
 
 **Validações:**
+
 - ✅ Arquivo exists
 - ✅ JSON válido
 - ✅ 3 hosts configurados
@@ -203,6 +220,7 @@ node -e "const { getAllHosts } = require('./lib/hosts'); console.log(getAllHosts
 **Status:** ✅ PASS
 
 **Curl Equivalente:**
+
 ```bash
 curl -X POST "http://localhost:3000/api/servers" \
   -H "Content-Type: application/json" \
@@ -211,6 +229,7 @@ curl -X POST "http://localhost:3000/api/servers" \
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Sala Teste Cursor",
@@ -219,6 +238,7 @@ curl -X POST "http://localhost:3000/api/servers" \
 ```
 
 **Response (simulado):**
+
 ```json
 {
   "server": {
@@ -238,6 +258,7 @@ curl -X POST "http://localhost:3000/api/servers" \
 ```
 
 **Backend Logs:**
+
 ```
 [HOSTS] Distribuição atual: { azzura: 0, sv1: 0, sv2: 0 }
 [HOSTS] Host selecionado: azzura (0/2 salas)
@@ -245,6 +266,7 @@ curl -X POST "http://localhost:3000/api/servers" \
 ```
 
 **Validações:**
+
 - ✅ `hostName` presente: "azzura"
 - ✅ `pm2ProcessName` presente: "haxball-server-b46c6a72"
 - ✅ Formato correto: `haxball-server-{uuid-prefix}`
@@ -257,6 +279,7 @@ curl -X POST "http://localhost:3000/api/servers" \
 **Status:** ✅ PASS
 
 **Curl Equivalente:**
+
 ```bash
 curl -X POST "http://localhost:3000/api/servers/test-server-123/admins" \
   -H "Content-Type: application/json" \
@@ -265,6 +288,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/admins" \
 ```
 
 **Request Body:**
+
 ```json
 {
   "label": "Admin Principal",
@@ -273,6 +297,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/admins" \
 ```
 
 **Response (simulado):**
+
 ```json
 {
   "success": true,
@@ -287,12 +312,14 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/admins" \
 ```
 
 **Backend Logs:**
+
 ```
 [ADMINS POST] Criando admin para servidor test-server-123
 [ADMINS POST] Admin criado com sucesso
 ```
 
 **Validações:**
+
 - ✅ Admin criado com UUID válido
 - ✅ `adminHash` presente (não senha em plain text)
 - ✅ Campo `password` NÃO retornado (segurança)
@@ -306,6 +333,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/admins" \
 **Status:** ✅ PASS
 
 **Curl Equivalente:**
+
 ```bash
 curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
   -H "Content-Type: application/json" \
@@ -314,6 +342,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 ```
 
 **Request Body:**
+
 ```json
 {
   "action": "restart",
@@ -322,6 +351,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 ```
 
 **Response (simulado):**
+
 ```json
 {
   "success": true,
@@ -334,6 +364,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 ```
 
 **Backend Logs:**
+
 ```
 [CONTROL] Modo DRY-RUN ativado
 [CONTROL] Host: azzura (18.231.184.163)
@@ -342,6 +373,7 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 ```
 
 **Validações:**
+
 - ✅ `dryRun: true` confirmado
 - ✅ `command` presente
 - ✅ Comando contém `ssh`
@@ -358,14 +390,17 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 ### Status: ✅ RESOLVIDO
 
 **Problema Anterior:**
+
 - Alguns endpoints retornavam HTML em vez de JSON
 - Erro: `Unexpected token '<'`
 
 **Correção Aplicada:**
+
 - Todos os endpoints retornam `NextResponse.json()`
 - Validação em `test-multi-host-routes.ts` confirma JSON válido
 
 **Evidência:**
+
 ```
 ✅ Todos os 5 testes passaram sem erros de parsing JSON
 ✅ Nenhum teste detectou HTML na resposta
@@ -381,11 +416,13 @@ curl -X POST "http://localhost:3000/api/servers/test-server-123/control" \
 **Arquivo:** `app/api/servers/route.ts` (linha 82)
 
 **Código:**
+
 ```typescript
 const pm2ProcessName = `haxball-server-${serverId.substring(0, 8)}`;
 ```
 
 **Validação:**
+
 - ✅ Formato estável: `haxball-server-{uuid-prefix}`
 - ✅ Exemplo: `haxball-server-b46c6a72`
 - ✅ Sempre 8 caracteres após o prefixo
@@ -398,6 +435,7 @@ const pm2ProcessName = `haxball-server-${serverId.substring(0, 8)}`;
 **Arquivo:** `app/api/servers/[serverId]/control/route.ts` (linhas 86-94)
 
 **Código:**
+
 ```typescript
 const pm2ProcessName = server.pm2ProcessName;
 
@@ -410,6 +448,7 @@ if (!pm2ProcessName) {
 ```
 
 **Validação:**
+
 - ✅ Retorna `500` se `pm2ProcessName` é NULL
 - ✅ Retorna JSON (não HTML)
 - ✅ Mensagem descritiva do erro
@@ -422,6 +461,7 @@ if (!pm2ProcessName) {
 **Arquivo:** `app/api/servers/route.ts` (linha 89)
 
 **Código:**
+
 ```typescript
 const availableHost = await getAvailableHost();
 
@@ -437,6 +477,7 @@ hostName: availableHost.name, // ← SEMPRE atribuído
 ```
 
 **Validação:**
+
 - ✅ Retorna `503` se nenhum host disponível
 - ✅ `hostName` é SEMPRE atribuído (nunca NULL)
 - ✅ Load balancing seleciona host com menos carga
@@ -448,6 +489,7 @@ hostName: availableHost.name, // ← SEMPRE atribuído
 ### Commit Hash: `c5734fc`
 
 **Mensagem:**
+
 ```
 fix: stabilizar rotas multi-host e adicionar testes
 
@@ -463,6 +505,7 @@ TESTES:
 ```
 
 ### Arquivos Modificados no Commit:
+
 ```
 M  app/api/servers/[serverId]/control/route.ts  (dry-run mode)
 M  app/api/servers/route.ts                     (pm2ProcessName fix)
@@ -475,24 +518,24 @@ A  test-multi-host-routes.ts                     (testes)
 
 ## 7️⃣ CHECKLIST FINAL
 
-| # | Teste | Status | Detalhes |
-|---|-------|--------|----------|
-| A | GET /api/servers | ✅ PASS | Lista servidores (JSON válido) |
-| B | POST /api/servers | ✅ PASS | hostName + pm2ProcessName gerados |
-| C | POST /api/servers/:id/admins | ✅ PASS | Admin criado (sem senha em plain text) |
-| D | POST /api/servers/:id/control | ✅ PASS | Dry-run (comando SSH sem executar) |
+| #   | Teste                         | Status  | Detalhes                               |
+| --- | ----------------------------- | ------- | -------------------------------------- |
+| A   | GET /api/servers              | ✅ PASS | Lista servidores (JSON válido)         |
+| B   | POST /api/servers             | ✅ PASS | hostName + pm2ProcessName gerados      |
+| C   | POST /api/servers/:id/admins  | ✅ PASS | Admin criado (sem senha em plain text) |
+| D   | POST /api/servers/:id/control | ✅ PASS | Dry-run (comando SSH sem executar)     |
 
 ### Validações Críticas:
 
-| Validação | Status | Valor |
-|-----------|--------|-------|
-| hostName presente | ✅ PASS | "azzura" |
-| pm2ProcessName presente | ✅ PASS | "haxball-server-b46c6a72" |
+| Validação                      | Status  | Valor                       |
+| ------------------------------ | ------- | --------------------------- |
+| hostName presente              | ✅ PASS | "azzura"                    |
+| pm2ProcessName presente        | ✅ PASS | "haxball-server-b46c6a72"   |
 | pm2ProcessName formato correto | ✅ PASS | Sim (haxball-server-{uuid}) |
-| Password NÃO retornada | ✅ PASS | Apenas adminHash |
-| Dry-run comando presente | ✅ PASS | SSH command completo |
-| Dry-run NÃO executa SSH | ✅ PASS | Apenas retorna string |
-| Nenhum endpoint retorna HTML | ✅ PASS | Todos retornam JSON |
+| Password NÃO retornada         | ✅ PASS | Apenas adminHash            |
+| Dry-run comando presente       | ✅ PASS | SSH command completo        |
+| Dry-run NÃO executa SSH        | ✅ PASS | Apenas retorna string       |
+| Nenhum endpoint retorna HTML   | ✅ PASS | Todos retornam JSON         |
 
 **Taxa de Sucesso:** ✅ **100% (5/5 testes passaram)**
 
@@ -514,6 +557,7 @@ A  test-multi-host-routes.ts                     (testes)
 **Sistema multi-host validado e pronto para produção!**
 
 **Evidências Fornecidas:**
+
 - ✅ Commit hash e lista de arquivos modificados
 - ✅ Conteúdo completo dos 5 arquivos principais
 - ✅ 4 testes simulados com curl equivalentes
@@ -523,6 +567,7 @@ A  test-multi-host-routes.ts                     (testes)
 - ✅ HTML/JSON issue resolvido
 
 **Pronto para:**
+
 - ✅ Deployment em produção
 - ✅ Testes end-to-end com EC2s reais
 - ✅ Provisionamento automático
@@ -533,4 +578,3 @@ A  test-multi-host-routes.ts                     (testes)
 **Data:** 18 de Novembro de 2025  
 **Commit:** `c5734fc`  
 **Status:** ✅ **VALIDADO E APROVADO**
-
